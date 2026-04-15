@@ -2,10 +2,9 @@ pipeline {
     agent any
 
     stages {
-        stage('Verify') {
+        stage('Checkout') {
             steps {
-                echo 'Checking files...'
-                bat 'dir'
+                checkout scm
             }
         }
 
@@ -19,7 +18,7 @@ pipeline {
         stage('Docker Run') {
             steps {
                 echo 'Starting Docker Container...'
-                bat 'docker rm -f portfolio-container || exit 0'
+                bat 'docker rm -f portfolio-container'
                 bat 'docker run -d --name portfolio-container -p 8081:80 portfolio-app'
             }
         }
