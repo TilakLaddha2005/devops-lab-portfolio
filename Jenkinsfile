@@ -1,37 +1,24 @@
 pipeline {
     agent any
-
     stages {
-        stage('Source Checkout') {
+        stage('Checkout') {
             steps {
-                echo 'Pulling latest code from GitHub...'
                 checkout scm
             }
         }
-
-        stage('Quality Gate (Test)') {
+        stage('Docker Build') {
             steps {
-                echo 'Checking for all required pages...'
-                // Verifies that your new labs.html is actually present before deploying
-                bat 'if exist index.html (echo "Home exists") else (exit 1)'
-                bat 'if exist labs.html (echo "Labs page exists") else (exit 1)'
-                bat 'if exist contact.html (echo "Contact page exists") else (exit 1)'
+                echo 'Building Docker Image...'
+                bat 'docker build -t portfolio-app .'
             }
         }
-
-        stage('Automated Deployment') {
+        stage('Docker Run') {
             steps {
-                echo 'Deploying full website to Local Server...'
-                // This copies EVERY .html file to your public folder
-                bat 'copy /Y *.html C:\\Users\\Public\\'
-                echo 'All pages (Home, Labs, Contact) are now LIVE.'
+                echo 'Starting Docker Container...'
+                // Removes old container if it exists to avoid port conflicts
+                bat 'docker rm -f portfolio-container || true'
+                bat 'docker run -d --name portfolio-container -p 8081:80 portfolio-app'
             }
-        }
-    }
-
-    post {
-        always {
-            echo 'Pipeline Execution Finished.'
         }
     }
 }
