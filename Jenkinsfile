@@ -1,33 +1,55 @@
 pipeline {
     agent any
+
     stages {
-        stage('Checkout') {
+        stage('Source Checkout') {
             steps {
+                // Pulls the latest code from your GitHub repository
                 checkout scm
             }
         }
+
         stage('Deploy to XAMPP') {
             steps {
                 echo 'Deploying to C:\\xampp\\htdocs\\DEVOPS...'
-                // Create directory if it doesn't exist
+                // Create the DEVOPS directory if it does not exist
                 bat 'if not exist "C:\\xampp\\htdocs\\DEVOPS" mkdir "C:\\xampp\\htdocs\\DEVOPS"'
-                // Force copy all files to the subfolder
+                // Copy all files to the XAMPP htdocs subfolder (/Y overwrites automatically)
                 bat 'copy /Y * "C:\\xampp\\htdocs\\DEVOPS\\"'
+                echo 'Traditional XAMPP Deployment Successful!'
             }
         }
+
         stage('Docker Build') {
             steps {
                 echo 'Building Docker Image...'
-                // If this fails, make sure Docker Desktop is OPEN and GREEN
+                // Builds the image with the tag v1
                 bat 'docker build -t portfolio-app:v1 .'
             }
         }
+
         stage('Docker Run') {
             steps {
-                echo 'Cleaning old container and starting new one...'
+                echo 'Cleaning old container and starting new one on Port 8083...'
+                // Force remove the old container if it exists, ignore error if it doesn't
                 bat 'docker rm -f portfolio-container || true'
-                bat 'docker run -d --name portfolio-container -p 8082:80 portfolio-app:v1'
+                
+                // Run the new container on port 8083 to avoid port allocation errors
+                bat 'docker run -d --name portfolio-container -p 8083:80 portfolio-app:v1'
+                
+                echo 'Containerized Deployment Successful on Port 8083!'
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline Execution Finished Successfully!'
+            echo 'Access XAMPP at: http://localhost/DEVOPS/index.html'
+            echo 'Access Docker at: http://localhost:8083'
+        }
+        failure {
+            echo 'Pipeline Failed. Please check the Console Output for errors.'
         }
     }
 }
